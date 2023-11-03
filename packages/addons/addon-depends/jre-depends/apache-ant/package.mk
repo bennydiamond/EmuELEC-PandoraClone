@@ -3,8 +3,8 @@
 # Copyright (C) 2020-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="apache-ant"
-PKG_VERSION="1.10.11"
-PKG_SHA256="baa049855cdecbefa62539555824058e52412e5ebe8f102e1db944cb762e06d9"
+PKG_VERSION="1.10.13"
+PKG_SHA256="de0a860bf339e6975558f426772a6aa2c6ae0856215dd9aaf57aa2476d665664"
 PKG_LICENSE="Apache License 2.0"
 PKG_SITE="https://ant.apache.org/"
 PKG_URL="https://downloads.apache.org/ant/binaries/${PKG_NAME}-${PKG_VERSION}-bin.tar.xz"
@@ -20,3 +20,4 @@ makeinstall_host() {
   mkdir -p ${TOOLCHAIN}/bin
     ln -sf ${TOOLCHAIN}/apache-ant/bin/ant ${TOOLCHAIN}/bin/ant
 }
+

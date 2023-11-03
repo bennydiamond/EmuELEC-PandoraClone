@@ -11,3 +11,4 @@
  LDFLAGS += -lm $(fpic)
  
  .PHONY: all
+

@@ -2,45 +2,47 @@
 # Copyright (C) 2016-present Team LibreELEC (https://libreelec.tv)
 
 PKG_NAME="libretro-pcsx-rearmed"
-PKG_VERSION="b76bab8002d203f74e854072b6964138ede0a967"
-PKG_SHA256="86fb7d252d608cdaa520e70047631a62497e550132df8ebebc5f31dada32016b"
+PKG_VERSION="4373e29de72c917dbcd04ec2a5fb685e69d9def3"
+PKG_SHA256="85560938cdad30be5994e935d35b0b4b8a12f6d2ca39c0034bfaa3d98cbcb11a"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/libretro/pcsx_rearmed"
-PKG_URL="https://github.com/libretro/pcsx_rearmed/archive/$PKG_VERSION.tar.gz"
-PKG_DEPENDS_TARGET="toolchain kodi-platform"
+PKG_URL="https://github.com/libretro/pcsx_rearmed/archive/${PKG_VERSION}.tar.gz"
+PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="game.libretro.pcsx-rearmed: PCSX Rearmed for Kodi"
-PKG_TOOLCHAIN="manual"
+PKG_TOOLCHAIN="make"
 PKG_BUILD_FLAGS="-gold"
 
 PKG_LIBNAME="pcsx_rearmed_libretro.so"
-PKG_LIBPATH="$PKG_LIBNAME"
+PKG_LIBPATH="${PKG_LIBNAME}"
 PKG_LIBVAR="PCSX-REARMED_LIB"
 
-make_target() {
-  cd $PKG_BUILD
-  
+PKG_MAKE_OPTS_TARGET="-f Makefile.libretro GIT_VERSION=${PKG_VERSION:0:7}"
+
+pre_configure_target() {
+  cd ${PKG_BUILD}
+
   if target_has_feature neon; then
-    export HAVE_NEON=1
-    export BUILTIN_GPU=neon
+    PKG_MAKE_OPTS_TARGET+=" HAVE_NEON=1 HAVE_NEON_ASM=1 BUILTIN_GPU=neon"
    else
-    export HAVE_NEON=0
+    PKG_MAKE_OPTS_TARGET+=" HAVE_NEON=0"
   fi
   
-  case $TARGET_ARCH in
+  case ${TARGET_ARCH} in
     aarch64)
-      make -f Makefile.libretro DYNAREC=lightrec platform=aarch64 GIT_VERSION=$PKG_VERSION
+      PKG_MAKE_OPTS_TARGET+=" DYNAREC=ari64 platform=aarch64"
       ;;
     arm)
-      make -f Makefile.libretro DYNAREC=ari64 GIT_VERSION=$PKG_VERSION
+      PKG_MAKE_OPTS_TARGET+=" DYNAREC=ari64"
       ;;
     x86_64)
-      make -f Makefile.libretro DYNAREC=lightrec GIT_VERSION=$PKG_VERSION
+      PKG_MAKE_OPTS_TARGET+=" DYNAREC=lightrec"
       ;;
   esac
 }
 
 makeinstall_target() {
-  mkdir -p $SYSROOT_PREFIX/usr/lib/cmake/$PKG_NAME
-  cp $PKG_LIBPATH $SYSROOT_PREFIX/usr/lib/$PKG_LIBNAME
-  echo "set($PKG_LIBVAR $SYSROOT_PREFIX/usr/lib/$PKG_LIBNAME)" > $SYSROOT_PREFIX/usr/lib/cmake/$PKG_NAME/$PKG_NAME-config.cmake
+  mkdir -p ${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}
+  cp ${PKG_LIBPATH} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME}
+  echo "set(${PKG_LIBVAR} ${SYSROOT_PREFIX}/usr/lib/${PKG_LIBNAME})" > ${SYSROOT_PREFIX}/usr/lib/cmake/${PKG_NAME}/${PKG_NAME}-config.cmake
 }
+

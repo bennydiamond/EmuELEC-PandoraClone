@@ -1,107 +1,88 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
-# Copyright (C) 2009-2016 Stephan Raue (stephan@openelec.tv)
-# Copyright (C) 2018-present Team LibreELEC (https://libreelec.tv)
+# Copyright (C) 2018-present 5schatten (https://github.com/5schatten)
+# Copyright (C) 2019-present Shanti Gilbert (https://github.com/shantigilbert)
+# Copyright (C) 2022-present 7Ji (https://github.com/7Ji)
 
 PKG_NAME="SDL2"
-PKG_VERSION="2.0.9"
-PKG_SHA256="255186dc676ecd0c1dbf10ec8a2cc5d6869b5079d8a38194c2aecdff54b324b1"
+PKG_VERSION="2.28.3"
+PKG_SHA256="7acb8679652701a2504d734e2ba7543ec1a83e310498ddd22fd44bf965eb5518"
 PKG_LICENSE="GPL"
 PKG_SITE="https://www.libsdl.org/"
-PKG_URL="https://www.libsdl.org/release/$PKG_NAME-$PKG_VERSION.tar.gz"
-PKG_DEPENDS_TARGET="toolchain alsa-lib systemd dbus"
-PKG_LONGDESC="A cross-platform multimedia library designed to provide fast access to the graphics framebuffer and audio device. "
-PKG_BUILD_FLAGS="+pic"
+PKG_URL="https://www.libsdl.org/release/SDL2-${PKG_VERSION}.tar.gz"
+PKG_DEPENDS_TARGET="toolchain alsa-lib systemd dbus ${OPENGLES} pulseaudio"
+PKG_LONGDESC="Simple DirectMedia Layer is a cross-platform development library designed to provide low level access to audio, keyboard, mouse, joystick, and graphics hardware."
+PKG_DEPENDS_HOST="toolchain:host distutilscross:host"
+PKG_CMAKE_OPTS_HOST="-DSDL_MALI=OFF -DSDL_KMSDRM=OFF"
 
-if [ "$TARGET_ARCH" = "x86_64" ]; then
-  PKG_DEPENDS_TARGET+=" nasm:host"
-  PKG_SDL2_X86ASM="-DASSEMBLY=ON"
-else
-  # Only x86(-64) and ppc assembly present as of 2.0.8
-  PKG_SDL2_X86ASM="-DASSEMBLY=OFF"
-fi
+PKG_CMAKE_OPTS_TARGET="-DSDL_STATIC=OFF \
+                       -DSDL_LIBC=ON \
+                       -DSDL_GCC_ATOMICS=ON \
+                       -DSDL_ALTIVEC=OFF \
+                       -DSDL_OSS=OFF \
+                       -DSDL_ALSA=ON \
+                       -DSDL_ALSA_SHARED=ON \
+                       -DSDL_JACK=OFF \
+                       -DSDL_JACK_SHARED=OFF \
+                       -DSDL_ESD=OFF \
+                       -DSDL_ESD_SHARED=OFF \
+                       -DSDL_ARTS=OFF \
+                       -DSDL_ARTS_SHARED=OFF \
+                       -DSDL_NAS=OFF \
+                       -DSDL_NAS_SHARED=OFF \
+                       -DSDL_LIBSAMPLERATE=OFF \
+                       -DSDL_LIBSAMPLERATE_SHARED=OFF \
+                       -DSDL_SNDIO=OFF \
+                       -DSDL_DISKAUDIO=OFF \
+                       -DSDL_DUMMYAUDIO=OFF \
+                       -DSDL_DUMMYVIDEO=OFF \
+                       -DSDL_WAYLAND=OFF \
+                       -DSDL_WAYLAND_QT_TOUCH=ON \
+                       -DSDL_WAYLAND_SHARED=OFF \
+                       -DSDL_COCOA=OFF \
+                       -DSDL_DIRECTFB=OFF \
+                       -DSDL_VIVANTE=OFF \
+                       -DSDL_DIRECTFB_SHARED=OFF \
+                       -DSDL_FUSIONSOUND=OFF \
+                       -DSDL_FUSIONSOUND_SHARED=OFF \
+                       -DSDL_PTHREADS=ON \
+                       -DSDL_PTHREADS_SEM=ON \
+                       -DSDL_DIRECTX=OFF \
+                       -DSDL_CLOCK_GETTIME=OFF \
+                       -DSDL_RPATH=OFF \
+                       -DSDL_RENDER_D3D=OFF \
+                       -DSDL_X11=OFF \
+                       -DSDL_OPENGLES=ON \
+                       -DSDL_VULKAN=OFF \
+                       -DSDL_PULSEAUDIO=ON \
+                       -DSDL_HIDAPI_JOYSTICK=OFF"
 
-PKG_CMAKE_OPTS_TARGET="-DSDL_STATIC=ON \
-                       -DSDL_SHARED=OFF \
-                       -DLIBC=ON \
-                       -DGCC_ATOMICS=ON \
-                       $PKG_SDL2_X86ASM \
-                       -DALTIVEC=OFF \
-                       -DOSS=OFF \
-                       -DALSA=ON \
-                       -DALSA_SHARED=ON \
-                       -DESD=OFF \
-                       -DESD_SHARED=OFF \
-                       -DARTS=OFF \
-                       -DARTS_SHARED=OFF \
-                       -DNAS=OFF \
-                       -DNAS_SHARED=ON \
-                       -DSNDIO=OFF \
-                       -DDISKAUDIO=OFF \
-                       -DDUMMYAUDIO=OFF \
-                       -DVIDEO_WAYLAND=OFF \
-                       -DVIDEO_WAYLAND_QT_TOUCH=ON \
-                       -DWAYLAND_SHARED=OFF \
-                       -DVIDEO_MIR=OFF \
-                       -DMIR_SHARED=OFF \
-                       -DVIDEO_COCOA=OFF \
-                       -DVIDEO_DIRECTFB=OFF \
-                       -DDIRECTFB_SHARED=OFF \
-                       -DFUSIONSOUND=OFF \
-                       -DFUSIONSOUND_SHARED=OFF \
-                       -DVIDEO_DUMMY=OFF \
-                       -DINPUT_TSLIB=OFF \
-                       -DPTHREADS=ON \
-                       -DPTHREADS_SEM=ON \
-                       -DDIRECTX=OFF \
-                       -DSDL_DLOPEN=ON \
-                       -DCLOCK_GETTIME=OFF \
-                       -DRPATH=OFF \
-                       -DRENDER_D3D=OFF"
+case "${DEVICE}" in
+  'Amlogic-ng'|'Amlogic-old')  # We should've used PROJECT=Amlogic-ce logically, but using these two device names here saves a comparasion (only device needs to be compared)
+    PKG_PATCH_DIRS="Amlogic"
+    PKG_CMAKE_OPTS_TARGET+=" -DSDL_MALI=ON -DSDL_KMSDRM=OFF"
+  ;;
+  'OdroidGoAdvance'|'GameForce'|'RK356x'|'OdroidM1')
+    PKG_PATCH_DIRS="Rockchip"
+    PKG_CMAKE_OPTS_TARGET+=" -DSDL_KMSDRM=ON"
+    PKG_DEPENDS_TARGET+=" libdrm mali-bifrost"
+    if [ "${DEVICE}" = "OdroidGoAdvance" ]; then
+      PKG_PATCH_DIRS+=" OdroidGoAdvance"
+      PKG_DEPENDS_TARGET+=" librga"
+      # This is evil, but we save multiple comparasions
+      pre_make_host() {
+        sed -i "s| -lrga||g" ${PKG_BUILD}/CMakeLists.txt
+      }
+      pre_make_target() {
+        if ! `grep -rnw "${PKG_BUILD}/CMakeLists.txt" -e '-lrga'`; then
+          sed -i "s|--no-undefined|--no-undefined -lrga|" ${PKG_BUILD}/CMakeLists.txt
+        fi
+      }
+    fi
+  ;;
+esac
 
-if [ "$DISPLAYSERVER" = "x11" ]; then
-  PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET libX11 libXrandr"
-
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DVIDEO_X11=ON \
-                         -DX11_SHARED=ON \
-                         -DVIDEO_X11_XCURSOR=OFF \
-                         -DVIDEO_X11_XINERAMA=OFF \
-                         -DVIDEO_X11_XINPUT=OFF \
-                         -DVIDEO_X11_XRANDR=ON \
-                         -DVIDEO_X11_XSCRNSAVER=OFF \
-                         -DVIDEO_X11_XSHAPE=OFF \
-                         -DVIDEO_X11_XVM=OFF"
-else
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DVIDEO_X11=OFF"
-fi
-
-if [ ! "$OPENGL" = "no" ]; then
-  PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET $OPENGL"
-
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DVIDEO_OPENGL=ON \
-                         -DVIDEO_OPENGLES=OFF"
-else
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DVIDEO_OPENGL=OFF \
-                         -DVIDEO_OPENGLES=ON"
-fi
-
-if [ "$PULSEAUDIO_SUPPORT" = yes ]; then
-  PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET pulseaudio"
-
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DPULSEAUDIO=ON \
-                         -DPULSEAUDIO_SHARED=ON"
-else
-  PKG_CMAKE_OPTS_TARGET="$PKG_CMAKE_OPTS_TARGET \
-                         -DPULSEAUDIO=OFF \
-                         -DPULSEAUDIO_SHARED=OFF"
-fi
 
 post_makeinstall_target() {
-  sed -e "s:\(['=\" ]\)/usr:\\1$SYSROOT_PREFIX/usr:g" -i $SYSROOT_PREFIX/usr/bin/sdl2-config
-
-  rm -rf $INSTALL/usr/bin
+  sed -e "s:\(['=LI]\)/usr:\\1${SYSROOT_PREFIX}/usr:g" -i ${SYSROOT_PREFIX}/usr/bin/sdl2-config
+  safe_remove ${INSTALL}/usr/bin
 }
