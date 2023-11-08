@@ -50,19 +50,19 @@
   ESPEAK_SUPPORT="yes"
 
 # build and install with BluRay support (yes / no)
-  KODI_BLURAY_SUPPORT="yes"
+  KODI_BLURAY_SUPPORT="no"
 
 # build and install with BD+ support
 # (BD+ decryption support in KODI) (yes / no)
-  BLURAY_BDPLUS_SUPPORT="yes"
+  BLURAY_BDPLUS_SUPPORT="no"
 
 # build and install with AACS support
 # (BD decryption support in KODI) (yes / no)
-  BLURAY_AACS_SUPPORT="yes"
+  BLURAY_AACS_SUPPORT="no"
 
 # build and install with DVDCSS support
 # (DVD decryption support in KODI) (yes / no)
-  KODI_DVDCSS_SUPPORT="yes"
+  KODI_DVDCSS_SUPPORT="no"
 
 # additional drivers to install:
 # for a list of additional drivers see packages/linux-drivers
@@ -86,13 +86,13 @@
   KODI_MYSQL_SUPPORT="none"
 
 # build xbmc with optical drive support (yes / no)
-  KODI_OPTICAL_SUPPORT="yes"
+  KODI_OPTICAL_SUPPORT="no"
 
 # build with AirPlay support (stream videos from iDevices to KODI) (yes / no)
-  KODI_AIRPLAY_SUPPORT="yes"
+  KODI_AIRPLAY_SUPPORT="no"
 
 # build with AirTunes support (stream music from iDevices to KODI) (yes / no)
-  KODI_AIRTUNES_SUPPORT="yes"
+  KODI_AIRTUNES_SUPPORT="no"
 
 # build with libnfs support (mounting nfs shares with KODI) (yes / no)
   KODI_NFS_SUPPORT="yes"
@@ -113,10 +113,10 @@
   SFTP_SERVER="yes"
 
 # build and install OpenVPN support (yes / no)
-  OPENVPN_SUPPORT="yes"
+  OPENVPN_SUPPORT="no"
 
 # build and install WireGuard support (yes / no)
-  WIREGUARD_SUPPORT="yes"
+  WIREGUARD_SUPPORT="no"
 
 # build and install diskmounter support (udevil)
 # this service provide auto mounting support for external drives in the
@@ -229,10 +229,10 @@
   DISTRO_PKG_SETTINGS=""
 
 # IR remote protocols supported in default config
-  IR_REMOTE_PROTOCOLS="RC6 NEC"
+  IR_REMOTE_PROTOCOLS=""
 
 # IR remote keymaps supported in default config
-  IR_REMOTE_KEYMAPS="rc6_mce xbox_360 xbox_one"
+  IR_REMOTE_KEYMAPS=""
 
 
 # start SX05RE added options
