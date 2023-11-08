@@ -56,30 +56,8 @@ PKG_CMAKE_OPTS_TARGET="-DSDL_STATIC=OFF \
                        -DSDL_PULSEAUDIO=ON \
                        -DSDL_HIDAPI_JOYSTICK=OFF"
 
-case "${DEVICE}" in
-  'Amlogic-ng'|'Amlogic-old')  # We should've used PROJECT=Amlogic-ce logically, but using these two device names here saves a comparasion (only device needs to be compared)
-    PKG_PATCH_DIRS="Amlogic"
-    PKG_CMAKE_OPTS_TARGET+=" -DSDL_MALI=ON -DSDL_KMSDRM=OFF"
-  ;;
-  'OdroidGoAdvance'|'GameForce'|'RK356x'|'OdroidM1')
-    PKG_PATCH_DIRS="Rockchip"
-    PKG_CMAKE_OPTS_TARGET+=" -DSDL_KMSDRM=ON"
-    PKG_DEPENDS_TARGET+=" libdrm mali-bifrost"
-    if [ "${DEVICE}" = "OdroidGoAdvance" ]; then
-      PKG_PATCH_DIRS+=" OdroidGoAdvance"
-      PKG_DEPENDS_TARGET+=" librga"
-      # This is evil, but we save multiple comparasions
-      pre_make_host() {
-        sed -i "s| -lrga||g" ${PKG_BUILD}/CMakeLists.txt
-      }
-      pre_make_target() {
-        if ! `grep -rnw "${PKG_BUILD}/CMakeLists.txt" -e '-lrga'`; then
-          sed -i "s|--no-undefined|--no-undefined -lrga|" ${PKG_BUILD}/CMakeLists.txt
-        fi
-      }
-    fi
-  ;;
-esac
+PKG_PATCH_DIRS="Amlogic"
+PKG_CMAKE_OPTS_TARGET+=" -DSDL_MALI=ON -DSDL_KMSDRM=OFF"
 
 
 post_makeinstall_target() {
