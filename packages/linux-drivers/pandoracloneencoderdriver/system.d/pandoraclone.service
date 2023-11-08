@@ -1,0 +1,11 @@
+[Unit]
+Description=Enables PandoraClone input control driver
+After=storage.mount
+Wants=storage.mount
+
+[Service]
+Type=forking
+ExecStart=/usr/lib/pandoraclone/pandoraclone-run.sh
+
+[Install]
+WantedBy=multi-user.target
