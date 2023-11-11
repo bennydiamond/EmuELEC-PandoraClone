@@ -16,7 +16,6 @@ PKG_TOOLCHAIN="manual"
 
 PKG_DEPENDS_TARGET+=" commander-genius \
                 devilutionX \
-                sdlpop \
                 VVVVVV \
                 opentyrian \
                 bermuda \
@@ -31,7 +30,6 @@ PKG_DEPENDS_TARGET+=" commander-genius \
                 chocolate-doom \
                 lzdoom \
                 supermariowar \
-                bstone \
                 hurrican \
                 cdogs-sdl \
                 abuse \

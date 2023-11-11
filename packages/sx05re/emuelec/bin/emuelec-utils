@@ -6,13 +6,27 @@
 # Source predefined functions and variables
 . /etc/profile
 
+function test() {
+    echo "success"
+    exit 1
+}
+
 function error() {
     text_viewer /emuelec/logs/emuelec.log -w -t "Error! ${2}" -f 24
 	show_splash.sh exit
 }
 
+function setauddev() {
+#set audio device out according to emuelec.conf
+    AUDIO_DEVICE="${1}"
+    [ -z "${AUDIO_DEVICE}" ] && AUDIO_DEVICE="$(get_ee_setting ee_audio_device)"
+    [[ "${AUDIO_DEVICE}" = "auto" || -z "${AUDIO_DEVICE}" ]] && AUDIO_DEVICE="0,0"
+    sed -i "s|pcm \"hw:.*|pcm \"hw:${AUDIO_DEVICE}\"|" /storage/.config/asound.conf
+}
+
 function audio() {
-	# This has to be expanded to check for new GLX devices running on Amlogic-ng,
+    setauddev;
+    # This has to be expanded to check for new GLX devices running on Amlogic-ng,
 	# but right now its mostly used on ES to change audio to alsa before launching or else ES hangs on GXL devices.
    if [[ "$1" == "alsa" ]]; then
 		set_audio alsa
@@ -29,7 +43,7 @@ function clearconfig() {
         unmount_all
 		systemctl stop emustation
 		ee_backup backup no
-		find /storage -mindepth 1 \( ! -regex '^/storage/.config/emulationstation/themes.*' -a ! -regex '^/storage/.update.*' -a ! -regex '^/storage/download.*' -a ! -regex '^/storage/roms.*' -a ! -regex '^/storage/.cache/bluetooth.*' \) -delete
+		find /storage -mindepth 1 \( ! -regex '^/storage/.config/emuelec/themes.*' -a ! -regex '^/storage/.config/emulationstation/themes.*' -a ! -regex '^/storage/.update.*' -a ! -regex '^/storage/download.*' -a ! -regex '^/storage/roms.*' -a ! -regex '^/storage/.cache/bluetooth.*' \) -delete
 		mkdir /storage/.config/
 		sync
         small-cores enable
@@ -42,7 +56,7 @@ function clearconfig() {
 	"ALL")
         unmount_all
 		systemctl stop emustation
-		find /storage -mindepth 1 \( ! -regex '^/storage/.update.*' -a ! -regex '^/storage/roms.*' -a ! -regex '^/storage/.cache/bluetooth.*' \) -delete
+		find /storage -mindepth 1 \( ! -regex '^/storage/.config/emuelec/themes.*' -a ! -regex '^/storage/.update.*' -a ! -regex '^/storage/roms.*' -a ! -regex '^/storage/.cache/bluetooth.*' \) -delete
 		mkdir /storage/.config/
 		sync
         small-cores enable
@@ -52,34 +66,33 @@ function clearconfig() {
 }
 
 function ee_backup() {
-	BACKUPFILE="ee_backup_config.tar.gz"
+    BACKUPDIR="/storage/roms/backup"
+    BACKUPTAR="ee_backup_config.tar.gz"
+    BACKUPFILE="${BACKUPDIR}/${BACKUPTAR}"
 
-    if mountpoint -q /var/media/EEROMS; then
-        mkdir -p "/var/media/EEROMS/backup"
-        BACKUPFILE="/var/media/EEROMS/backup/${BACKUPFILE}"
-    elif mountpoint -q /storage/roms; then
-        mkdir -p "/storage/roms/backup"
-        BACKUPFILE="/storage/roms/backup/${BACKUPFILE}"
-    fi
+    mkdir -p "${BACKUPDIR}"
 
 	case "${1}" in
 	"restore")
-		[ -z "$2" ] && systemctl stop emustation
+		[ -z "${2}" ] && systemctl stop emustation
         cd /
 		tar xvf "${BACKUPFILE}"
 		sync
         sleep 3
-		[ -z "$2" ] && systemctl start emustation
+        RESTOREDATE="$(date +'%m-%d-%Y')_$(uuidgen)"
+        # Move the backup file instead of deleting it
+        mv "${BACKUPFILE}" "${BACKUPDIR}/restored_${RESTOREDATE}_${BACKUPTAR}" &
+		[ -z "${2}" ] && systemctl start emustation
 	;;
 	"backup")
 		[ -f "${BACKUPFILE}" ] && rm "${BACKUPFILE}"
-		[ -z "$2" ] && systemctl stop emustation
+		[ -z "${2}" ] && systemctl stop emustation
         tar -zcvf "${BACKUPFILE}" /storage/.local/share/VVVVVV/* \
 					  /storage/.cache/bluetooth/* \
 					  /storage/.cache/timezone \
+					  /storage/.cache/hostname \
 					  /storage/.config/scummvm/* \
-					  /storage/.config/emuelec/configs/emuoptions.conf \
-					  /storage/.config/emuelec/configs/emuelec.conf \
+					  /storage/.config/emuelec/configs/* \
 					  /storage/.emulationstation/es_*.cfg \
 					  /storage/.emulationstation/themesettings \
 					  /tmp/joypads/* \
@@ -91,12 +104,65 @@ function ee_backup() {
 					  /storage/.emulationstation/scripts/drastic/backup/* \
 					  /storage/.emulationstation/scripts/drastic/savestates/* \
 					  /storage/.config/emuelec/bin/pico-8/* \
-					  /storage/.config/emuelec/configs/solarus/*
         sync
 		sleep 3
 		[ -z "${2}" ] && systemctl start emustation
 	;;
+    esac
+}
+
+function ee_cloud_backup() {
+    RCLONECONF="/emuelec/configs/rclone/rclone.conf"
+    EESYNCCFG="/emuelec/configs/rclone/ee_cloud_sync.cfg"
+    
+    if [ -e "${EESYNCCFG}" ]; then
+        . "${EESYNCCFG}"
+    fi
+    
+    [ -z "${EE_SYNC_REMOTE}" ] && EE_SYNC_REMOTE="EmuELEC_Remote"
+    [ -z "${EE_SYNC_PATH}" ] && EE_SYNC_PATH="EmuELEC_Backup"
+
+    [ -z "${2}" ] && systemctl stop emustation
+    
+    # We need to check if rclone.conf exists and its configured correctly, else show error
+    if [ -e "${RCLONECONF}" ]; then
+        # in case this file was created in windows, we need to convert it
+        dos2unix ${RCLONECONF}
+        if ! grep -Fxq "[${EE_SYNC_REMOTE}]" ${RCLONECONF}; then
+            text_viewer -e -w -t "rclone.conf error!" -f 24 -m "rclone.conf exist but it does not contain a remote named ${EE_SYNC_REMOTE}, please read https://rclone.org/remote_setup/ name your remote ${EE_SYNC_REMOTE} and copy resulting rclone.conf to /emuelec/configs/rclone/"
+            systemctl start emustation
+            exit 1;
+        fi
+    else
+        text_viewer -e -w -t "rclone.conf does not exist!" -f 24 -m "rclone.conf does not exist and its required for cloud sync to function! please read https://rclone.org/remote_setup/ and copy resulting rclone.conf to /emuelec/configs/rclone/"
+        systemctl start emustation
+        exit 1;
+    fi
+        
+   	case "${1}" in 
+    "backup")
+        # we first create a regular backup
+        echo "emuelec-utils ee_backup backup no" > /tmp/cloud.sh
+        # We sync to EmuELEC_Remote specified in /emuelec/configs/rclone/rclone.conf to EmuELEC_Backup in the remote server
+        echo "rclone sync /storage/roms/ ${EE_SYNC_REMOTE}:/${EE_SYNC_PATH}/ --filter-from /emuelec/configs/rclone/emuelec-cloud-filter.cfg -P -v --config ${RCLONECONF} 2>&1 | tee /emuelec/logs/cloud-backup.log" >> /tmp/cloud.sh
+    ;;
+    "restore")
+        # We first sync to /storage/roms from EmuELEC_Remote specified in /emuelec/configs/rclone/rclone.conf
+        echo "rclone sync ${EE_SYNC_REMOTE}:/${EE_SYNC_PATH}/ /storage/roms/ --filter-from /emuelec/configs/rclone/emuelec-cloud-filter.cfg -P -v --config ${RCLONECONF} 2>&1 | tee /emuelec/logs/cloud-backup.log" > /tmp/cloud.sh
+        # We then restore the backup file (if it exists)
+        echo "emuelec-utils ee_backup restore no" >> /tmp/cloud.sh
+    ;;
 	esac
+    echo "echo \"Done!...Press 'Select' or choose 'Close' to continue!\"" >> /tmp/cloud.sh    
+    chmod +x /tmp/cloud.sh
+    text_viewer -s /tmp/cloud.sh -t "EmuELEC cloud sync, please wait!..."
+    rm /tmp/cloud.sh > /dev/null 2>&1
+    
+    if [ "${1}" == "restore" ]; then 
+        systemctl reboot
+    else
+        [ -z "${2}" ] && systemctl start emustation
+    fi
 }
 
 function filemanager() {
@@ -125,44 +191,90 @@ IP="$(ifconfig wlan0 | grep 'inet addr' | cut -d: -f2 | awk '{print $1}')"
  fi
 }
 
+function dimensions() {
+
+	DIMENSIONS=()
+
+	local FILEPATH="/emuelec/configs/dimensions.conf"
+
+	[[ ! -f "$FILEPATH" ]] && cp /usr/config/emuelec/configs/dimensions.conf /emuelec/configs
+
+  # Screen supported dimensions
+  SCREEN_DIMENSIONS=`/usr/bin/cat "$FILEPATH"`
+  for SD in $SCREEN_DIMENSIONS
+  do
+    DIMENSIONS+=($SD)
+  done
+
+  DIMENSIONS=($(printf "%s\n" "${DIMENSIONS[@]}" | sort -u))
+
+	IFS=","
+	echo "${DIMENSIONS[*]}"
+}
+
 function resolutions() {
 
 	RESOLUTIONS=()
 
-	# N2 supported resolutions source : https://wiki.odroid.com/odroid-n2/application_note/software/set_display_mode
-	N2_SUPPORTED_RESOLUTIONS="480x320p60hz 640x480p60hz 720x480p60hz 720x576p50hz 800x480p60hz 1024x600p60hz 1024x768p60hz 1280x1024p60hz 1280x720p50hz 1280x720p60hz 1280x800p60hz 1360x768p60hz 1440x900p60hz 1600x1200p60hz 1600x900p60hz 1680x1050p60hz 1920x1080p24hz 1920x1080p30hz 1920x1080p50hz 1920x1080p60hz 1920x1200p60hz 2560x1080p60hz 2560x1440p60hz 2560x1600p60hz 3440x1440p60hz 3840x2160p24hz 3840x2160p25hz 3840x2160p30hz 3840x2160p50hz 3840x2160p60hz"
+  if [ -f "/storage/LEGACY_RESOLUTIONS" ]; then
+    # N2 supported resolutions source : https://wiki.odroid.com/odroid-n2/application_note/software/set_display_mode
+    N2_SUPPORTED_RESOLUTIONS="480x320p60hz 640x480p60hz 720x480p60hz 720x576p50hz 800x480p60hz 1024x600p60hz 1024x768p60hz 1280x1024p60hz 1280x720p50hz 1280x720p60hz 1280x800p60hz 1360x768p60hz 1440x900p60hz 1600x1200p60hz 1600x900p60hz 1680x1050p60hz 1920x1080p24hz 1920x1080p30hz 1920x1080p50hz 1920x1080p60hz 1920x1200p60hz 2560x1080p60hz 2560x1440p60hz 2560x1600p60hz 3440x1440p60hz 3840x2160p24hz 3840x2160p25hz 3840x2160p30hz 3840x2160p50hz 3840x2160p60hz"
 
-	# Screen supported resolutions
-	SCREEN_SUPPORTED_RESOLUTIONS=`/usr/bin/cat /sys/class/amhdmitx/amhdmitx0/rawedid | /usr/bin/edid-decode |/usr/bin/grep "@" | sed -E "s| {0,9}VIC {0,9}[0-9]{1,2}||" | /usr/bin/awk '{print $1}' | /usr/bin/sed  's/@/p/g'|/usr/bin/tr '[:upper:]' '[:lower:]'`
+    # Screen supported resolutions
+    SCREEN_SUPPORTED_RESOLUTIONS=`/usr/bin/cat /sys/class/amhdmitx/amhdmitx0/rawedid | /usr/bin/edid-decode |/usr/bin/grep "@" | sed -E "s| {0,9}VIC {0,9}[0-9]{1,2}||" | /usr/bin/awk '{print $1}' | /usr/bin/sed  's/@/p/g'|/usr/bin/tr '[:upper:]' '[:lower:]'`
 
-	for N2SP in $N2_SUPPORTED_RESOLUTIONS
-	do
-	for SSR in $SCREEN_SUPPORTED_RESOLUTIONS
-	do
-		if [ "$N2SP" = "$SSR" ]
-		then
-		RESOLUTIONS+=($N2SP)
-		fi
-	done
-	done
+    for N2SP in $N2_SUPPORTED_RESOLUTIONS
+    do
+      for SSR in $SCREEN_SUPPORTED_RESOLUTIONS
+      do
+        if [ "$N2SP" = "$SSR" ]
+        then
+          RESOLUTIONS+=($N2SP)
+        fi
+      done
+    done
+  fi
+
+  if [[ "$EE_PROJECT" == "Rockchip" ]]; then
+    SCREEN_SUPPORTED_RESOLUTIONS=`/usr/bin/cat /sys/class/display/display0.HDMI/modes | sort -u`
+    for SSR in $SCREEN_SUPPORTED_RESOLUTIONS
+    do
+      RESOLUTIONS+=($SSR)
+    done
+  else
+    # Screen supported resolutions
+    SCREEN_SUPPORTED_RESOLUTIONS=`/usr/bin/cat /sys/class/display/cap | sed '/smpte/d' | sed '/pal/d' | sed '/ntsc/d' | sed 's/\*//' | grep -E '[0-9x]+[pi][56]0hz|cvbs'`
+    for SSR in $SCREEN_SUPPORTED_RESOLUTIONS
+    do
+      RESOLUTIONS+=($SSR)
+    done
+  fi
+
+  if [ "$EE_DEVICE" == "OdroidGoAdvance" ]; then
+    RESOLUTIONS+="480x320p60hz"
+  fi
+
+  if [ "$EE_DEVICE" == "GameForce" ]; then
+    RESOLUTIONS+="640x480p60hz"
+  fi
+
+	local FILEPATH="/emuelec/configs/resolutions_amlogic.conf"
+	if [[ "$DEVICE" == "Rockchip" ]]; then
+		FILEPATH="/emuelec/configs/resolutions_rockchip.conf"
+	fi
+
+	if [[ -f "$FILEPATH" ]]; then
+	  SCREEN_SUPPORTED_RESOLUTIONS=`/usr/bin/cat '$FILEPATH'`
+	  for SSR in $SCREEN_SUPPORTED_RESOLUTIONS
+	  do
+	    RESOLUTIONS+=($SSR)
+	  done
+	fi
+
+  RESOLUTIONS=($(printf "%s\n" "${RESOLUTIONS[@]}" | sort -u))
 
 	IFS=","
 	echo "${RESOLUTIONS[*]}"
-}
-
-function showdialog() {
-	source /usr/bin/env.sh
-	joy2keyStart
-
-	[[ "${1}" == "Game" ]] && ERROR=$(cat /emuelec/logs/emuelec.log) || ERROR="${2}"
-
-	if [[ ! -z "${1}" ]] && [[ ! -z "${ERROR}" ]]; then
-		if [ "$EE_DEVICE" == "OdroidGoAdvance" ] || [ "$EE_DEVICE" == "GameForce" ]; then
-			dialog --backtitle 'EmuELEC Error' --title "${1} Error" --ascii-lines --colors --no-collapse --ok-label 'Close' --msgbox "${ERROR}" 20 35
-		else
-			dialog --backtitle 'EmuELEC Error' --title "${1} Error" --ascii-lines --colors --no-collapse --ok-label 'Close' --msgbox "${ERROR}" 30 80
-		fi
-	fi
 }
 
 function current_timezone() {
@@ -196,6 +308,44 @@ function unmount_all () {
     if /usr/bin/busybox mountpoint -q /storage/roms ; then
         umount /storage/roms > /dev/null 2>&1
     fi
+}
+
+function createMultidisc() {
+  local ROMNAME="$1"
+
+  local BASEROMNAME="${ROMNAME##*/}"
+  local BASEFOLDER="$(dirname "${ROMNAME}")"
+  local ROMEXT="${BASEROMNAME##*.}"
+  local ROMNAME_NOEXT="${BASEROMNAME%.*}"
+
+  [[ "$ROMEXT" == "m3u" ]] && echo -e "\n" && return
+
+  if [[ "${ROMNAME_NOEXT,,}" =~ ^.*disc[[:space:]]*1.*$ ]]; then
+      local M3U_FILE=$(echo "${ROMNAME_NOEXT}" | sed -nE "s/(.*)(disc *)1(.*)/\1 DISCS \3/pi")
+      M3U_FILE=$(echo "${BASEFOLDER}/${M3U_FILE}.m3u")
+      [[ -f "${M3U_FILE}" ]] && echo -e "\n" && return
+
+      touch "${M3U_FILE}"
+      local HAS_SEQ=0
+      local REGEX=$( echo "${ROMNAME_NOEXT}" | sed -nE "s/(.*)(disc*)\s*[0-9](.*)/\1\2\3/pi" \
+        | sed -e 's/\[[^][]*\]//g' | sed -e 's/([^()]*)//g' | sed -e 's/\s+/ /' \
+        | awk '{$1=$1};1' )
+      REGEX=$( echo ".*${REGEX}.*" )
+      local FILES=$( ls "${BASEFOLDER}/"* | grep ".${ROMEXT}" | grep -E "${REGEX}" | sort )
+      IFS=$'\n'
+      local ITER=0
+      for item in $FILES
+      do
+        echo "${item}" >> "$M3U_FILE"
+        ((ITER++))
+      done
+      if [[ "$ITER" -gt "1" ]]; then
+        echo -e "${M3U_FILE}"
+      else
+        rm "${M3U_FILE}"
+      fi
+  fi
+  echo -e "\n"
 }
 
 cmd=${1}

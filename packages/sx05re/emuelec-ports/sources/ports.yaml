@@ -184,22 +184,6 @@ Rick Dangerous:
   commands:
     - /usr/bin/emuelecRunEmu.sh "/storage/roms/ports/xrick/data.zip" -Pports "${2}" -Cxrick "-SC${0}"
 
-Prince of Persia:
-  description: SDLPoP is an open-source port of Prince of Persia that runs natively on Windows and Linux. It is based on a disassembly of the DOS version.
-  rating: 1.0
-  release_date: 20110111T000000
-  developer: Dávid Nagy
-  publisher: non-commercial
-
-  init_port: true
-  port_exe: "prince"
-  audio: "alsa"
-  commands:
-    - '[[ ! -f "/storage/.config/emuelec/configs/SDLPoP/SDLPoP.cfg" ]] && touch "/storage/.config/emuelec/configs/SDLPoP/SDLPoP.cfg"'
-    - '# SDLPop will complain about a missing data and config files by showing a nice blank screen after the intro'
-    - cd /storage/.config/emuelec/configs/SDLPoP
-    - ${PORT}
-
 VVVVVV:
   description: VVVVVV is a platform game all about exploring one simple mechanical idea - what if you reversed gravity instead of jumping? The game is designed not to artificially gate your progress. In VVVVVV there are no locks, no power-ups, no switches, nothing to stop you progressing except the challenges themselves.
   rating: 1.0

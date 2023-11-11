@@ -45,4 +45,5 @@ PKG_DEPENDS_TARGET+=" ffmpeg \
                       gptokeyb \
                       exfat \
                       351Files \
-                      box64"
+                      box64 \
+                      grep"

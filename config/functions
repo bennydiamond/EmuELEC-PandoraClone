@@ -721,6 +721,10 @@ get_build_dir() {
   fi
 }
 
+get_install_dir() {
+  get_pkg_variable "$1" PKG_INSTALL
+}
+
 get_pkg_version() {
   get_pkg_variable "$1" PKG_VERSION
 }

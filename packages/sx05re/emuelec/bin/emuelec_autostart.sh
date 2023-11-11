@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2021-present Shanti Gilbert (https://github.com/shantigilbert)
@@ -9,13 +9,34 @@
 # DO NOT modify this file, if you need to use autostart please use /storage/.config/custom_start.sh 
 
 # It seems some slow SDcards have a problem creating the symlink on time :/
-CONFIG_FLASH="/flash/config.ini"
 CONFIG_DIR="/storage/.emulationstation"
 CONFIG_DIR2="/storage/.config/emulationstation"
 
 if [ ! -L "$CONFIG_DIR" ]; then
 ln -sf $CONFIG_DIR2 $CONFIG_DIR
 fi
+
+if [ "${EE_DEVICE}" == "Amlogic" ]; then
+  rm /storage/.config/asound.conf > /dev/null 2>&1
+  cp /storage/.config/asound.conf-amlogic /storage/.config/asound.conf
+
+    if [ "$(get_es_setting bool StopMusicOnScreenSaver)" != "false" ]; then 
+        sed -i "/<bool name=\"StopMusicOnScreenSaver.*/d" "${ES_CONF}"
+        sed -i "s|</config>|	<bool name=\"StopMusicOnScreenSaver\" value=\"false\" />\n</config>|g" "${ES_CONF}"
+    fi
+
+elif [ "${EE_DEVICE}" == "Amlogic-ng" ]; then
+  rm /storage/.config/asound.conf > /dev/null 2>&1
+  cp /storage/.config/asound.conf-amlogic-ng /storage/.config/asound.conf
+fi
+
+HOSTNAME=$(get_ee_setting system.hostname)
+if [ ! -z "${HOSTNAME}" ];then 
+    echo "${HOSTNAME}" > /storage/.cache/hostname
+else
+    echo "EMUELEC" > /storage/.cache/hostname
+fi
+cat /storage/.cache/hostname > /proc/sys/kernel/hostname
 
 if [[ "$EE_DEVICE" == "GameForce" ]]; then
 LED=$(get_ee_setting bl_rgb)
@@ -41,12 +62,13 @@ if [[ "$EE_DEVICE" == "GameForce" ]] || [[ "$EE_DEVICE" == "OdroidGoAdvance" ]];
     odroidgoa_utils.sh oga_oc "${OGAOC}"
 fi
 
-BTENABLED=$(get_ee_setting ee_bluetooth.enabled)
 
-if [[ "$BTENABLED" != "1" ]]; then
-systemctl stop bluetooth
-rm /storage/.cache/services/bluez.conf & 
+# Mounts /storage/roms
+MOUNT_HANDLER=$(get_ee_setting ee_mount.handler)
+if [ -z "$MOUNT_HANDLER" ]; then
+  MOUNT_HANDLER="eemount"
 fi
+$MOUNT_HANDLER &> /emuelec/logs/eemount.log
 
 # copy default bezel to /storage/roms/bezel if it doesn't exists
 if [ ! -f "/storage/roms/bezels/default.cfg" ]; then 
@@ -55,41 +77,14 @@ cp -rf /usr/share/retroarch-overlays/bezels/* /storage/roms/bezels/ &
 fi
 
 # Restore config if backup exists
-BACKUPFILE="ee_backup_config.tar.gz"
-BACKUPFILE="/storage/roms/backup/${BACKUPFILE}"
+BACKUPTAR="ee_backup_config.tar.gz"
+BACKUPFILE="/storage/roms/backup/${BACKUPTAR}"
 
-[[ ! -f "${BACKUPFILE}" ]] && BACKUPFILE="/var/media/EEROMS/backup/${BACKUPFILE}"
+[[ ! -f "${BACKUPFILE}" ]] && BACKUPFILE="/var/media/EEROMS/backup/${BACKUPTAR}"
 
-if [ -f ${BACKUPFILE} ]; then 
-	emuelec-utils ee_backup restore no
-	rm ${BACKUPFILE} &
+if [ -f "${BACKUPFILE}" ]; then 
+	emuelec-utils ee_backup restore no > /emuelec/logs/last-restore.log 2>&1
 fi
-
-DEFE=""
-
-# If the video-mode is contained in flash config.
-if [ -s "${CONFIG_FLASH}" ]; then
-  CFG_VAL=$(get_config_value "$CONFIG_FLASH" "hdmimode")
-  [ ! -z "$CFG_VAL" ] && DEFE="$CFG_VAL" && set_ee_setting ee_videomode $DEFE
-fi
-
-# Otherwise retrieve via normal methods.
-if [ -z "$DEFE" ]; then
-  if [ -s "/storage/.config/EE_VIDEO_MODE" ]; then
-      DEFE=$(cat /storage/.config/EE_VIDEO_MODE) && set_ee_setting ee_videomode $DEFE
-  fi
-fi
-
-if [ -z "$DEFE" ]; then
-  # Set video mode, this has to be done before starting ES
-  DEFE=$(get_ee_setting ee_videomode)
-  if [ "${DEFE}" == "Custom" ]; then
-      DEFE=$(cat /sys/class/display/mode)
-  fi
-fi
-
-# finally we correct the FB according to video mode
-setres.sh ${DEFE}
 
 # Clean cache garbage when boot up.
 rm -rf /storage/.cache/cores/* &
@@ -109,8 +104,8 @@ case "$DEFE" in
 	;;
 esac
 
-# Mounts /storage/roms
-mount_romfs.sh 
+# Checks and sets the resolution for starting ES.
+check_res.sh
 
 # Show splash creen 
 show_splash.sh intro
@@ -120,6 +115,17 @@ show_splash.sh intro
 
 # Just make sure all the subshells are finished before starting front-end
 wait
+
+# Start Scanning for Bluetooth Controllers
+BTENABLED=$(get_ee_setting ee_bluetooth.enabled)
+BTSCANTIME=$(get_ee_setting ee_bluetooth.scantime)
+if [[ "$BTENABLED" != "1" ]]; then
+systemctl stop bluetooth
+rm /storage/.cache/services/bluez.conf & 
+else
+systemctl restart bluetooth
+emuelec-bluetooth $BTSCANTIME &
+fi
 
 # What to start at boot?
 DEFE=$(get_ee_setting ee_boot)
