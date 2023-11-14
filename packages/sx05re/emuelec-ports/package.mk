@@ -14,26 +14,10 @@ PKG_SHORTDESC="EmuELEC Ports Meta Package"
 PKG_TOOLCHAIN="manual"
 
 
-PKG_DEPENDS_TARGET+=" commander-genius \
-                devilutionX \
-                VVVVVV \
-                opentyrian \
-                bermuda \
-                hodesdl \
-                hydracastlelabyrinth \
-                eduke \
+PKG_DEPENDS_TARGET+=" hydracastlelabyrinth \
                 rigelengine \
-                sonic2013 \
-                soniccd \
-                supertux \
                 supertuxkart \
-                chocolate-doom \
-                lzdoom \
-                supermariowar \
-                hurrican \
-                cdogs-sdl \
-                abuse \
-                fheroes2"
+                supermariowar"
 
 amlogicports=""
 hhports=" openjazz"

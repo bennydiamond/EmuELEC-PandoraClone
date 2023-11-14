@@ -85,7 +85,7 @@ done
 
 function check_update() { 
 if [[ "$arguments" == *"canupdate"* ]]; then
-	echo "$UPDATEVERP"
+	echo "$UPDATEVER"
 elif [[ "$arguments" == *"geturl"* ]]; then	
 	echo "$UPDURL"
 elif [[ "$arguments" == *"getsize"* ]]; then
@@ -97,7 +97,7 @@ fi
 #make sure there is no old update
 do_cleanup
 
-# To avoid curl error "(23) Failed writing body", we download the full page to /tmp/eeupd and use cat to read it then delete it
+# To avoid curl error “(23) Failed writing body”, we download the full page to /tmp/eeupd and use cat to read it then delete it
 curl -s ${UPDINFO} -o /tmp/eeupd
 
 UPDDATA=$(cat /tmp/eeupd | grep "$UPDTYPE")
@@ -115,8 +115,6 @@ if [[ "${EE_DEVICE}" == "OdroidGoAdvance" ]]; then
     UFILE+="-odroidgo2.tar"
 elif [[ "${EE_DEVICE}" == "GameForce" ]]; then
     UFILE+="-chi.tar"
-elif [[ "${EE_DEVICE}" == "RK356x" ]]; then
-    UFILE+="-rk356x.tar"
 else
     UFILE+=".tar"
 fi
@@ -143,12 +141,6 @@ UVER=$(echo "$UVER" | sed "s|-TEST-||")
 
 CURRENTVER="${CVER%%.*}${CVER#*.}"
 UPDATEVER="${UVER%%.*}${UVER#*.}"
-UPDATEVERP="${UVER}"
-
-# If current or update version is only 2 digits, then we add 99999999 to allow updating from beta to stable and viceversa
-[ ${#CURRENTVER} == 2 ] && CURRENTVER="${CURRENTVER}99999999" 
-[ ${#UPDATEVER} == 2 ] && UPDATEVER="${UPDATEVER}99999999"
-
 
 # if you use forceupdate as an argument you can forcibly download the latest STABLE release and call an update
 if [[ "$arguments" == *"forceupdate"* ]]; then

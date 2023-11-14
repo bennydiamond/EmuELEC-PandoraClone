@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2019-present Shanti Gilbert (https://github.com/shantigilbert)
@@ -8,8 +8,10 @@
 
 # odroidgoa
 
+
 function check_pwd() {
 
+EE_CONF="${EE_DIR}/configs/emuelec.conf"
 ESSETTINGS="/storage/.config/emulationstation/es_settings.cfg"
 
 PWDFILE="${1}"
@@ -158,25 +160,18 @@ else
     fi
 fi
 
-# We need to always use the newest es_systems.cfg if there was a recent update, we also need to update the ports gamelist.xml and es_features.cfg
+# We need to always use the newest es_systems.cfg if there was a recent update, we also need to update the ports gamelist.xml
 CVER=$(cat /storage/.config/EE_VERSION)
 NVER=$(cat /usr/config/EE_VERSION)
 BUILDATE=$(cat /usr/buildate)
 
-ESDIR="/storage/.config/emulationstation"
-OLDCFG="${ESDIR}/es_systems.cfg.${BUILDATE}.bak"
-CFG="${ESDIR}/es_systems.cfg"
+OLDCFG="/storage/.config/emulationstation/es_systems.cfg.${BUILDATE}.bak"
+CFG="/storage/.config/emulationstation/es_systems.cfg"
 
 if [[ "${CVER}" != "${NVER}" ]]; then
     mv "/storage/.config/emuelec/ports/gamelist.xml" "/storage/.config/emuelec/ports/gamelist.xml.${BUILDATE}.bak"
-    cp -rf "/usr/bin/ports/gamelist.xml" "/storage/.config/emuelec/ports/gamelist.xml"
-    
-    mv "${ESDIR}/es_features.cfg" "${ESDIR}/es_features.cfg.${BUILDATE}.bak"
-    cp -rf "/usr/config/emulationstation/es_features.cfg" "${ESDIR}/es_features.cfg"
-    
     cp -f "${CFG}" "${OLDCFG}"
     cp -f "/usr/config/emulationstation/es_systems.cfg" "${CFG}"
-    
     echo "${NVER}" > /storage/.config/EE_VERSION
 (
     if grep -q '<name>nds</name>' "${OLDCFG}"; then
@@ -189,7 +184,7 @@ if [[ "${CVER}" != "${NVER}" ]]; then
             -s '//systemList/system[last()]' -t elem -n 'hardware' -v 'portable'\
             -s '//systemList/system[last()]' -t elem -n 'path' -v '/storage/roms/nds'\
             -s '//systemList/system[last()]' -t elem -n 'extension' -v '.nds .zip .NDS .ZIP'\
-            -s '//systemList/system[last()]' -t elem -n 'command' -v "emuelecRunEmu.sh %ROM% -P%SYSTEM% --core=%CORE% --emulator=%EMULATOR% --controllers=\"%CONTROLLERSCONFIG%\""\
+            -s '//systemList/system[last()]' -t elem -n 'command' -v "$EXE %ROM% -P%SYSTEM% --core=%CORE% --emulator=%EMULATOR% --controllers=\"%CONTROLLERSCONFIG%\""\
             -s '//systemList/system[last()]' -t elem -n 'platform' -v 'nds'\
             -s '//systemList/system[last()]' -t elem -n 'theme' -v 'nds'\
             ${CFG} 
@@ -208,6 +203,9 @@ if [[ -e "/storage/roms/bios/pico-8" ]]; then
     rm -rf /storage/roms/bios/pico-8
     chmod +x /emuelec/bin/pico-8/pico8_dyn
     touch /storage/roms/pico-8/splore.p8
+
+# This may no longer be required, but for lack of testing time I will leave it
+    patchelf --set-interpreter /emuelec/lib32/ld-linux-armhf.so.3 /emuelec/bin/pico-8/pico8_dyn
 fi 
 
 # If Pico-8 binary does not exist remove the splore.p8
@@ -253,21 +251,17 @@ PWDFILE="/flash/ee_defaults.txt"
 [ ! -f "${PWDFILE}" ] && PWDFILE="/storage/roms/ee_defaults.txt"
 [ -f "${PWDFILE}" ] && check_pwd ${PWDFILE}
 
-# The mounting logic for ports_scripts is now handled in the mount handler
-# # Find and mount the ports directory 
-# if [ -L "/storage/roms" ]; then
-#     LINK=$(readlink /storage/roms)
-# else
-#     LINK="/storage/roms"
-# fi
-# # Just in case
-# mkdir -p "${LINK}/ports_scripts"
-# mkdir -p "/emuelec/ports"
-# mkdir -p "/storage/.tmp/ports-workdir"
-# umount "/storage/roms/ports_scripts" > /dev/null 2>&1
-# umount "/var/media/EEROMS/roms/ports_scripts" > /dev/null 2>&1
+# Find and mount the ports directory 
+[[ -L "/storage/roms" ]] && LINK=$(readlink /storage/roms) || LINK="/storage/roms/"
 
-# mount -t overlay ports -o lowerdir=/usr/bin/ports,upperdir=/emuelec/ports,workdir=/storage/.tmp/ports-workdir "${LINK}/ports_scripts"
+# Just in case
+mkdir -p "${LINK}ports_scripts"
+mkdir -p "/emuelec/ports"
+mkdir -p "/storage/.tmp/ports-workdir"
+umount "/storage/roms/ports_scripts" > /dev/null 2>&1
+umount "/var/media/EEROMS/roms/ports_scripts" > /dev/null 2>&1
+
+mount -t overlay ports -o lowerdir=/usr/bin/ports,upperdir=/emuelec/ports,workdir=/storage/.tmp/ports-workdir "${LINK}ports_scripts"
 
 # wait for all the subshells to finish
 wait
@@ -275,15 +269,25 @@ wait
 # We do not care if BT scanning finishes before ES starts
 BTENABLED=$(get_ee_setting ee_bluetooth.enabled)
 if [[ "$BTENABLED" == "1" ]]; then
-    # Search for bluetooth gamepads while ES loads. 
-    (
-        batocera-bluetooth trust
-    ) &
+
+# Search for bluetooth gamepads while ES loads. 
+(
+# Kill the BT agent if exists, in case of restart 
+NPID=$(pgrep -f batocera-bluetooth-agent)
+if [[ ! -z "$NPID" ]]; then
+	kill "$NPID"
 fi
+echo "EmuELEC Bluetooth Log" > /emuelec/logs/bt.log
+sleep 5
+echo "Starting..." >> /emuelec/logs/bt.log
+python /usr/bin/scripts/scriptmodules/supplementary/bluetoothcontroller.py >> /emuelec/logs/bt.log 2>&1
 
-emuelec-utils setauddev
-
-# Checks and sets the resolution for starting ES.
-check_res.sh
+# only start the bt agent if not already running 
+NPID=$(pgrep -f batocera-bluetooth-agent)
+if [[ -z "$NPID" ]]; then
+ (systemd-run batocera-bluetooth-agent) || :
+fi
+) &
+fi 
 
 exit 0
