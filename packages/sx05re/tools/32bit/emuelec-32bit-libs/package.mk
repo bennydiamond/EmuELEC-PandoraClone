@@ -12,28 +12,14 @@ PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain $OPENGLES"
 PKG_LONGDESC="EmuELEC 32-bit libraries, binaries and cores to use with EmuELEC aarch64"
 PKG_TOOLCHAIN="manual"
+#PKG_VERSION_PATH="r7p0/fbdev"
+PKG_VERSION_PATH="r5p1"
 
 makeinstall_target() {
   mkdir -p ${INSTALL}
-if [[ "$DEVICE" == "OdroidGoAdvance" ]] || [[ "$DEVICE" == "GameForce" ]]; then
-	cp -rf ${PKG_BUILD}/OdroidGoAdvance/* ${INSTALL}/
-	
-	if [[ "${DEVICE}" == "GameForce" ]]; then
-	   cp -rf ${PKG_BUILD}/GameForce/* ${INSTALL}/
-	fi
-	cp -rf --remove-destination "$(get_build_dir mali-bifrost)/libmali.so_rk3326_gbm_arm32_r13p0_with_vulkan_and_cl" ${INSTALL}/usr/config/emuelec/lib32/libMali.so	
-elif [[ "${DEVICE}" == "Amlogic-ng" ]]; then
-    cp -rf ${PKG_BUILD}/Amlogic-ng/* ${INSTALL}/
-    cp -p "$(get_build_dir opengl-meson)/lib/eabihf/gondul/r12p0/fbdev/libMali.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.gondul.so
-    cp -p "$(get_build_dir opengl-meson)/lib/eabihf/dvalin/r12p0/fbdev/libMali.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.dvalin.so
-    cp -p "$(get_build_dir opengl-meson)/lib/eabihf/m450/r7p0/fbdev/libMali.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.m450.so
-elif [[ "${DEVICE}" == "Amlogic-old" ]]; then
-	cp -rf ${PKG_BUILD}/Amlogic-old/* ${INSTALL}/
-    cp -p "$(get_build_dir opengl-meson)/lib/eabihf/m450/r7p0/fbdev/libMali.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.m450.so
-elif [[ "${DEVICE}" == "RK356x" ]] || [[ "${DEVICE}" == "OdroidM1" ]]; then
-	cp -rf ${PKG_BUILD}/RK356x/* ${INSTALL}/
-    cp -rfp --remove-destination "$(get_build_dir mali-bifrost)/lib/arm-linux-gnueabihf/libmali-bifrost-g52-g2p0-gbm.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.so
-fi
+  # Amlogic
+  cp -rf ${PKG_BUILD}/Amlogic-old/* ${INSTALL}/
+  cp -p "$(get_build_dir opengl-meson)/lib/eabihf/m450/$PKG_VERSION_PATH/libMali.so" ${INSTALL}/usr/config/emuelec/lib32/libMali.m450.so
 
 mkdir -p ${INSTALL}/usr/lib
 ln -sf /emuelec/lib32 ${INSTALL}/usr/lib/arm-linux-gnueabihf

@@ -20,7 +20,7 @@ GET_HANDLER_SUPPORT="git"
 PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET Crystal"
 
 pre_configure_target() {
-PKG_CMAKE_OPTS_TARGET=" -std=gnu++14 -DENABLE_EMUELEC=1 -DDISABLE_KODI=1 -DENABLE_FILEMANAGER=1 -DGLES2=1 -DCMAKE_CXX_STANDARD=14"
+PKG_CMAKE_OPTS_TARGET=" -DENABLE_EMUELEC=1 -DDISABLE_KODI=1 -DENABLE_FILEMANAGER=1 -DGLES2=1 -DCMAKE_CXX_STANDARD=14"
 
 
 # Read api_keys.txt if it exist to add the required keys for cheevos, thegamesdb and screenscrapper. You need to get your own API keys. 
