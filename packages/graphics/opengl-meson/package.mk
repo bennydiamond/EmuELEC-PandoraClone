@@ -11,6 +11,7 @@ PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="OpenGL ES pre-compiled libraries for Mali GPUs found in Amlogic Meson SoCs."
 PKG_TOOLCHAIN="manual"
 PKG_VERSION_PATH="r5p1"
+#PKG_VERSION_PATH="r6p1"
 #PKG_VERSION_PATH="r7p0/fbdev"
 
 makeinstall_target() {

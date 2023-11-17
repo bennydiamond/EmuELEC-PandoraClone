@@ -12,8 +12,9 @@ PKG_URL="${PKG_SITE}/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain $OPENGLES"
 PKG_LONGDESC="EmuELEC 32-bit libraries, binaries and cores to use with EmuELEC aarch64"
 PKG_TOOLCHAIN="manual"
-#PKG_VERSION_PATH="r7p0/fbdev"
 PKG_VERSION_PATH="r5p1"
+#PKG_VERSION_PATH="r6p1"
+#PKG_VERSION_PATH="r7p0/fbdev"
 
 makeinstall_target() {
   mkdir -p ${INSTALL}
