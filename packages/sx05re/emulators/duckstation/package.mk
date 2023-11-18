@@ -34,16 +34,14 @@ pre_configure_target() {
 	                         -DHAVE_EGL=ON \
 	                         ${EXTRA_OPTS}"
 
-if [ "${DEVICE}" == "Amlogic-old" ]; then
-	cp -rf $(get_build_dir libevdev)/include/linux/linux/input-event-codes.h ${SYSROOT_PREFIX}/usr/include/linux/
-fi
+         # Amlogic
+         cp -rf $(get_build_dir libevdev)/include/linux/linux/input-event-codes.h ${SYSROOT_PREFIX}/usr/include/linux/
 
 }
 
 post_make_target() {
-if [ "${DEVICE}" == "Amlogic-old" ]; then
-  rm ${SYSROOT_PREFIX}/usr/include/linux/input-event-codes.h
-fi
+# Amlogic
+rm ${SYSROOT_PREFIX}/usr/include/linux/input-event-codes.h
 }
 
 makeinstall_target() {

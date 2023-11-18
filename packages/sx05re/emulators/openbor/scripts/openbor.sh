@@ -1,11 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2019-present Shanti Gilbert (https://github.com/shantigilbert)
 
 # OpenBOR only works with Pak files, if you have an extracted game you will need to create a pak first.
-
-/usr/bin/setres.sh 16
 
 pakname=$(basename "$1")
 pakname="${pakname%.*}"
@@ -36,5 +34,4 @@ gptokeyb openbor &
 # Clear PAKS folder to avoid getting the launcher on nex run
 rm -rf ${PAKS}/*
 
-/usr/bin/setres.sh
 killall gptokeyb &

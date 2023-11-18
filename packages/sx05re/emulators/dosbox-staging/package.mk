@@ -6,7 +6,7 @@ PKG_VERSION="f8fecfda130d3fad50a85c9b8352d04ebaeac7ab"
 PKG_LICENSE="GPLv2"
 PKG_SITE="https://github.com/dosbox-staging/dosbox-staging"
 PKG_URL="$PKG_SITE.git"
-PKG_DEPENDS_TARGET="toolchain linux meson:host glibc glib systemd dbus alsa-lib SDL2-git SDL2_net SDL_sound libpng zlib libvorbis flac libogg fluidsynth-git munt opusfile"
+PKG_DEPENDS_TARGET="toolchain linux meson:host glibc glib systemd dbus alsa-lib SDL2 SDL2_net SDL_sound libpng zlib libvorbis flac libogg fluidsynth-git munt opusfile"
 PKG_LONGDESC="DOS/x86 emulator focusing on ease of use "
 PKG_BUILD_FLAGS="+lto"
 
