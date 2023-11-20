@@ -10,7 +10,7 @@ PKG_URL="https://github.com/CoreELEC/opengl-meson/archive/${PKG_VERSION}.tar.gz"
 PKG_DEPENDS_TARGET="toolchain"
 PKG_LONGDESC="OpenGL ES pre-compiled libraries for Mali GPUs found in Amlogic Meson SoCs."
 PKG_TOOLCHAIN="manual"
-PKG_VERSION_PATH=$(get_pkg_variable gpu-aml PKG_UTGARD_VERSION)
+PKG_VERSION_PATH=$(get_pkg_variable gpu-aml PKG_UTGARD_VERSION)"/fbdev"
 
 makeinstall_target() {
 	mkdir -p ${INSTALL}/usr/lib
