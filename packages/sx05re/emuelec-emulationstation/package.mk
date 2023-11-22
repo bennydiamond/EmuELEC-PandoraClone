@@ -20,8 +20,7 @@ GET_HANDLER_SUPPORT="git"
 PKG_DEPENDS_TARGET="$PKG_DEPENDS_TARGET Crystal"
 
 pre_configure_target() {
-PKG_CMAKE_OPTS_TARGET=" -DENABLE_EMUELEC=1 -DDISABLE_KODI=1 -DENABLE_FILEMANAGER=1 -DGLES2=1 -DCMAKE_CXX_STANDARD=14"
-
+PKG_CMAKE_OPTS_TARGET=" -DENABLE_EMUELEC=1 -DDISABLE_KODI=1 -DENABLE_FILEMANAGER=1 -DGLES2=1"
 
 # Read api_keys.txt if it exist to add the required keys for cheevos, thegamesdb and screenscrapper. You need to get your own API keys. 
 # File should be in this format
@@ -82,6 +81,7 @@ makeinstall_target() {
         sed -i "s|, vertical||g" "${INSTALL}/usr/config/emulationstation/es_features.cfg"
     fi
 	
+    # Amlogic project has an issue with mixed audio
     sed -i "s|</config>|	<bool name=\"StopMusicOnScreenSaver\" value=\"false\" />\n</config>|g" "${INSTALL}/usr/config/emulationstation/es_settings.cfg"
 
     if [[ "${DEVICE}" == "OdroidGoAdvance" ]] || [[ "${DEVICE}" == "GameForce" ]]; then
@@ -98,11 +98,16 @@ makeinstall_target() {
 # Remove unused cores
 CORESFILE="${INSTALL}/usr/config/emulationstation/es_systems.cfg"
 
-
+# Amlogic old
 remove_cores="mesen-s quicknes mame2016 mesen yabasanshiroSA yabasanshiro"
 xmlstarlet ed -L -P -d "/systemList/system[name='saturn']" ${CORESFILE}
 xmlstarlet ed -L -P -d "/systemList/system[name='phillips-cdi']" ${CORESFILE}
 xmlstarlet ed -L -P -d "/systemList/system/emulators/emulator[@name='Duckstation']" ${CORESFILE}
+    
+for discore in ${remove_cores}; do
+    sed -i "s|<core>$discore</core>||g" ${CORESFILE}
+    sed -i '/^[[:space:]]*$/d' ${CORESFILE}
+done
 
 
 # Remove Retrorun For unsupported devices

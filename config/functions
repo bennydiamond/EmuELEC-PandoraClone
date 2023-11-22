@@ -700,6 +700,12 @@ do_autoreconf() {
   fi
 }
 
+# arg1: filename (libtool) to remove hardcode rpath when --disable-rpath is not supported by configure
+libtool_remove_rpath() {
+  sed -i 's|^hardcode_libdir_flag_spec=.*|hardcode_libdir_flag_spec=""|g' ${1}
+  sed -i 's|^runpath_var=LD_RUN_PATH|runpath_var=DIE_RPATH_DIE|g' ${1}
+}
+
 
 ### PACKAGE HELPERS ###
 # get variable ($2) for package ($1).
@@ -970,6 +976,12 @@ source_package() {
     fi
 
     PKG_BUILD="$BUILD/${PKG_NAME}-${PKG_VERSION}"
+
+    if [[ "${1}" =~ :target$ || "${1//:/}" = "${1}" ]]; then
+      PKG_INSTALL="$BUILD/${PKG_NAME}-${PKG_VERSION}/.install_pkg"
+    elif [[ "${1}" =~ :init$ ]]; then
+      PKG_INSTALL="$BUILD/${PKG_NAME}-${PKG_VERSION}/.install_init"
+    fi
   fi
 
   build_with_debug && BUILD_WITH_DEBUG="yes" || BUILD_WITH_DEBUG="no"
