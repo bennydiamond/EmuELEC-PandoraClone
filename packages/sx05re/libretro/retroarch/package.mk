@@ -19,21 +19,16 @@
 ################################################################################
 
 PKG_NAME="retroarch"
-PKG_VERSION="9a57ec29d5111d7d3a02df9479f57a64e2a85d7f"
+PKG_VERSION="6c2cc456284fcfa6fa5f94664950926c020d2f7b"
 PKG_SITE="https://github.com/libretro/RetroArch"
 PKG_URL="$PKG_SITE.git"
 PKG_LICENSE="GPLv3"
 PKG_DEPENDS_TARGET="toolchain SDL2 alsa-lib openssl freetype zlib retroarch-assets retroarch-overlays core-info ffmpeg libass joyutils empty $OPENGLES samba avahi nss-mdns freetype openal-soft"
 PKG_LONGDESC="Reference frontend for the libretro API."
 GET_HANDLER_SUPPORT="git"
-# Amlogic
-PKG_PATCH_DIRS="${DEVICE}"
 
 
-if [ "$DEVICE" == "OdroidGoAdvance" ] || [ "$DEVICE" == "GameForce" ] || [ "$DEVICE" == "RK356x" ] || [ "$DEVICE" == "OdroidM1" ]; then
-PKG_DEPENDS_TARGET+=" libdrm librga"
-PKG_PATCH_DIRS="OdroidGoAdvance"
-fi
+PKG_PATCH_DIRS="Amlogic"
 
 # Pulseaudio Support
   if [ "${PULSEAUDIO_SUPPORT}" = yes ]; then
