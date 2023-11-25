@@ -619,6 +619,8 @@ check_device() {
       device_err_msg="${device_err_msg}\n - ${device##*/}"
     done
     die "${device_err_msg}"
+  elif [ -z "${DEVICE}" ]; then
+    DEVICE=${PROJECT}
   fi
 }
 
