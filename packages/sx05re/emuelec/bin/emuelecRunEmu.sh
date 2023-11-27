@@ -193,10 +193,25 @@ case ${PLATFORM} in
             RUNTHIS='${TBASH} flycast.sh "${ROMNAME}"'
         fi
 		;;
+	"psx")
+		if [ "$EMU" = "duckstation" ]; then
+            set_kill_keys "duckstation-nogui"
+            RUNTHIS='${TBASH} duckstation.sh "${ROMNAME}"'
+        fi
+		;;
 	"mame"|"arcade"|"capcom"|"cps1"|"cps2"|"cps3")
 		if [ "$EMU" = "AdvanceMame" ]; then
             set_kill_keys "advmame"
             RUNTHIS='${TBASH} advmame.sh "${ROMNAME}"'
+		elif [ "$EMU" = "FbneoSA" ]; then
+            set_kill_keys "fbneo"
+            RUNTHIS='fbneo.sh "${ROMNAME}"'
+		fi
+		;;
+	"fbn"|"neogeo")
+        if [ "$EMU" = "FbneoSA" ]; then
+            set_kill_keys "fbneo"
+            RUNTHIS='fbneo.sh "${ROMNAME}"'
 		fi
 		;;
 	"nds")
@@ -207,7 +222,10 @@ case ${PLATFORM} in
 		if [ "$EMU" = "M64P" ]; then
             set_kill_keys "mupen64plus"
             RUNTHIS='${TBASH} m64p.sh "${ROMNAME}"'
-		fi
+		elif [ "$EMU" = "glide64mk2" ]; then
+            set_kill_keys "mupen64plus"
+            RUNTHIS='${TBASH} m64p.sh "${ROMNAME}" m64p_gl64mk2'
+        fi
 		;;
 	"amiga"|"amigacd32")
 		if [ "$EMU" = "AMIBERRY" ]; then
@@ -265,6 +283,9 @@ case ${PLATFORM} in
 	"neocd")
 		if [ "$EMU" = "fbneo" ]; then
             RUNTHIS='${RABIN} $VERBOSE -L /tmp/cores/fbneo_libretro.so --subsystem neocd --config ${RACONF} "${ROMNAME}"'
+		elif [ "$EMU" = "FbneoSA" ]; then
+            set_kill_keys "fbneo"
+            RUNTHIS='fbneo.sh "${ROMNAME}" NCD'
 		fi
 		;;
 	"mplayer")
@@ -303,6 +324,12 @@ case ${PLATFORM} in
             set_kill_keys "jzintv"
             RUNTHIS='jzintv.sh "${ROMNAME}"'
     fi
+        ;;
+	"saturn")
+        if [ "$EMU" = "yabasanshiroSA" ]; then
+            set_kill_keys "yabasanshiro"
+            RUNTHIS='yabasanshiro.sh "${ROMNAME}"'
+        fi
         ;;
 	esac
 elif [ ${LIBRETRO} == "yes" ]; then
@@ -487,11 +514,16 @@ fi
 # Chocolate Doom does not like to be killed?
 [[ "$EMU" = "Chocolate-Doom" ]] && ret_error="0"
 
+# YabasanshiroSA does not like to be killed?
+[[ "$EMU" = "yabasanshiroSA" ]] && ret_error="0"
+
 # Temp fix for retrorun always erroing out on exit
 [[ "${RETRORUN}" == "yes" ]] && ret_error=0
 
 # Temp fix for libretro scummvm always erroing out on exit
 [[ "${EMU}" == *"scummvm_libretro"* ]] && ret_error=0
+
+[[ "$CLOUD_SYNC" == "1" ]] && wait $CLOUD_PID
 
 if [[ "$ret_error" != "0" ]]; then
     echo "exit $ret_error" >> $EMUELECLOG
