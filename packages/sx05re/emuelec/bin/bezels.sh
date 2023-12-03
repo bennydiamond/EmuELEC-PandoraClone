@@ -29,6 +29,7 @@ case ${PLATFORM} in
   if [ -f "/storage/.config/bezels_enabled" ]; then
   clear_bezel
   sed -i '/input_overlay = "/d' ${RACONFIG}
+  sed -i '/input_overlay_enable = "/d' ${RACONFIG}
   rm "/storage/.config/bezels_enabled"
   fi
    exit 0
@@ -55,6 +56,9 @@ OVERLAYDIR1=$(find ${BEZELDIR}/${PLATFORM} -maxdepth 1 -iname "${ROMNAME}*.cfg" 
 [ ! -z "${BZLNAME}" ] && OVERLAYDIR2=$(find ${BEZELDIR}/${PLATFORM} -maxdepth 1 -iname "${BZLNAME}*.cfg" | sort -V | head -n 1)
 OVERLAYDIR3="${BEZELDIR}/${PLATFORM}/default.cfg"
 
+OVERLAYDIR_ROM="/storage/roms/${PLATFORM}/images/${ROMNAME}-bezel.png"
+OVERLAYDIR_ROM_CFG="/storage/roms/${PLATFORM}/images/${ROMNAME}-bezel.cfg"
+
 clear_bezel() { 
 		sed -i '/aspect_ratio_index = "/d' ${RACONFIG}
 		sed -i '/custom_viewport_width = "/d' ${RACONFIG}
@@ -63,8 +67,9 @@ clear_bezel() {
 		sed -i '/custom_viewport_y = "/d' ${RACONFIG}
 		sed -i '/video_scale_integer = "/d' ${RACONFIG}
 		sed -i '/input_overlay_opacity = "/d' ${RACONFIG}
-		echo 'video_scale_integer = "${DEFAULT_SCALE}"' >> ${RACONFIG}
-		echo 'aspect_ratio_index = "${DEFAULT_RATIO}"' >> ${RACONFIG}
+        sed -i '/input_overlay_enable = "/d' ${RACONFIG}
+		echo "video_scale_integer = \"${DEFAULT_SCALE}\"" >> ${RACONFIG}
+		echo "aspect_ratio_index = \"${DEFAULT_RATIO}\"" >> ${RACONFIG}
 		echo 'input_overlay_opacity = "0.150000"' >> ${RACONFIG}
 }
 
@@ -85,6 +90,7 @@ set_bezel() {
 		sed -i "5i custom_viewport_x = \"${3}\"" ${RACONFIG}
 		sed -i "6i custom_viewport_y = \"${4}\"" ${RACONFIG}
 		sed -i "7i video_scale_integer = \"${5}\"" ${RACONFIG}
+        sed -i "8i input_overlay_enable = \"true\"" ${RACONFIG}
 }
 
 check_overlay_dir() {
@@ -96,7 +102,15 @@ check_overlay_dir() {
 	
 	sed -i '/input_overlay = "/d' ${RACONFIG}
 		
-	if [ -f "${OVERLAYDIR1}" ]; then
+	if [ -f "${OVERLAYDIR_ROM}" ]; then
+        if [ ! -f "${OVERLAYDIR_ROM_CFG}" ]; then
+            echo "overlays = 1" > "${OVERLAYDIR_ROM_CFG}"
+            echo "overlay0_full_screen = true" >> "${OVERLAYDIR_ROM_CFG}"
+            echo "overlay0_descs = 0">> "${OVERLAYDIR_ROM_CFG}"
+            echo "overlay0_overlay = \"${OVERLAYDIR_ROM}\"" >> "${OVERLAYDIR_ROM_CFG}"
+        fi
+        echo -e "input_overlay = \""${OVERLAYDIR_ROM_CFG}"\"\n" >> ${RACONFIG}
+	elif [ -f "${OVERLAYDIR1}" ]; then
 		echo -e "input_overlay = \""${OVERLAYDIR1}"\"\n" >> ${RACONFIG}
 	elif [ -f "${OVERLAYDIR2}" ]; then
 		echo -e "input_overlay = \""${OVERLAYDIR2}"\"\n" >> ${RACONFIG}

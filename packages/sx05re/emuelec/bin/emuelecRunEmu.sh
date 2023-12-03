@@ -199,9 +199,9 @@ case ${PLATFORM} in
             RUNTHIS='${TBASH} duckstation.sh "${ROMNAME}"'
         fi
 		;;
-	"mame"|"arcade"|"capcom"|"cps1"|"cps2"|"cps3")
+	"mame"|"arcade"|"cps1"|"cps2"|"cps3")
 		if [ "$EMU" = "AdvanceMame" ]; then
-            set_kill_keys "advmame"
+            set_kill_keys "advmame" 3
             RUNTHIS='${TBASH} advmame.sh "${ROMNAME}"'
 		elif [ "$EMU" = "FbneoSA" ]; then
             set_kill_keys "fbneo"
@@ -219,7 +219,7 @@ case ${PLATFORM} in
 		RUNTHIS='${TBASH} /storage/.emulationstation/scripts/drastic.sh "${ROMNAME}"'
 		;;
 	"n64")
-		if [ "$EMU" = "M64P" ]; then
+		if [ "$EMU" = "rice" ]; then
             set_kill_keys "mupen64plus"
             RUNTHIS='${TBASH} m64p.sh "${ROMNAME}"'
 		elif [ "$EMU" = "glide64mk2" ]; then
