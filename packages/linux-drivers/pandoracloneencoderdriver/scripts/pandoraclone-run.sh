@@ -27,7 +27,6 @@ function retry {
 
 
 systemctl stop debug-shell.service
-modprobe pandoraclone.ko
 chmod 666 /dev/ttyS0
 # Invoke a basic retry routine just in case of a failure...
-retry /usr/sbin/inputattach-pandora --pandora --daemon /dev/ttyS0
+retry /usr/sbin/inputattach-pandora --pandora --daemon --always /dev/ttyS0

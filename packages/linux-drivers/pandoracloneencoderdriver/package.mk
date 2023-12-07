@@ -29,10 +29,14 @@ make_target() {
 }
 
 makeinstall_target() {
-  mkdir -p $INSTALL/$(get_full_module_dir)/$PKG_NAME
+#  mkdir -p $INSTALL/$(get_full_module_dir)/$PKG_NAME
 # This copies all .ko files found in build dir. Not ideal since repo includes serio which is not necessary here,
 #    find $PKG_BUILD/ -name \*.ko -not -path '*/\.*' -exec cp {} $INSTALL/$(get_full_module_dir)/$PKG_NAME \;
-    cp -P pandoraclone.ko $INSTALL/$(get_full_module_dir)/$PKG_NAME
+    mv serio.ko serio.ko.donotinstall
+#    cp -P pandoraclone.ko $INSTALL/$(get_full_module_dir)/$PKG_NAME
+  kernel_make -C $(kernel_path) M=$PKG_BUILD/ \
+    INSTALL_MOD_PATH=$INSTALL/$(get_kernel_overlay_dir) INSTALL_MOD_STRIP=1 DEPMOD=: \
+    modules_install
 
 
   mkdir -p $INSTALL/usr/sbin
